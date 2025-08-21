@@ -1,72 +1,87 @@
 import React, { useState } from "react";
 
-const areas = ["Bruce Mill", "Rockwood", "Rattray", "Rattlesnake Point"];
-const timeSlots = [
-  "9:00am - 12:00pm",
-  "12:00pm - 3:00pm",
-  "3:00pm - 6:00pm"
-];
+const areas = ['Bruce Mill', 'Rockwood', 'Rattray', 'Rattlesnake point'];
+const timeSlots = ['9:00am - 12:00pm', '12:00pm - 3:00pm', '3:00pm - 6:00pm'];
 
 export default function ReservationSystem() {
-  const [reservations, setReservations] = useState([]);
-  const [name, setName] = useState("");
-  const [area, setArea] = useState(areas[0]);
-  const [timeSlot, setTimeSlot] = useState(timeSlots[0]);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    area: "",
+    timeslot: ""
+  });
+  const [message, setMessage] = useState("");
 
-  // Handle form submit
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Prevent double booking
-    const exists = reservations.find(
-      (r) => r.area === area && r.timeSlot === timeSlot
-    );
-    if (exists) {
-      alert("This time slot is already booked at " + area);
-      return;
+    try {
+      const res = await fetch("http://localhost/your-api-folder/create_reservation.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      setMessage(data.message);
+    } catch (error) {
+      setMessage("Error submitting reservation");
     }
-
-    const newReservation = { name, area, timeSlot };
-    setReservations([...reservations, newReservation]);
-    setName("");
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Conservation Area Reservations</h1>
-      <form onSubmit={handleSubmit}>
+    <div className="p-4 max-w-md mx-auto bg-gray-100 shadow-lg rounded-xl">
+      <h2 className="text-xl font-bold mb-4">Book a Conservation Area</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
-          placeholder="Enter your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          name="name"
+          placeholder="Your Name"
+          value={form.name}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
           required
         />
-        <select value={area} onChange={(e) => setArea(e.target.value)}>
-          {areas.map((a, index) => (
-            <option key={index} value={a}>
-              {a}
-            </option>
+        <input
+          type="email"
+          name="email"
+          placeholder="Your Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
+        <select
+          name="area"
+          value={form.area}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        >
+          <option value="">Select Conservation Area</option>
+          {areas.map((a, i) => (
+            <option key={i} value={a}>{a}</option>
           ))}
         </select>
-        <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)}>
-          {timeSlots.map((t, index) => (
-            <option key={index} value={t}>
-              {t}
-            </option>
+        <select
+          name="timeslot"
+          value={form.timeslot}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        >
+          <option value="">Select Time Slot</option>
+          {timeSlots.map((t, i) => (
+            <option key={i} value={t}>{t}</option>
           ))}
         </select>
-        <button type="submit">Reserve</button>
+        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">
+          Reserve
+        </button>
       </form>
-
-      <h2>Current Reservations</h2>
-      <ul>
-        {reservations.map((res, index) => (
-          <li key={index}>
-            {res.name} - {res.area} - {res.timeSlot}
-          </li>
-        ))}
-      </ul>
+      {message && <p className="mt-4 text-center">{message}</p>}
     </div>
   );
 }

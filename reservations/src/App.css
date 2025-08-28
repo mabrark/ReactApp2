@@ -1,6 +1,4 @@
-/* src/App.css */
 
-/* Reset default margin/padding */
 body {
   margin: 0;
   padding: 0;
@@ -9,42 +7,38 @@ body {
   color: #333;
 }
 
-/* Container styling */
 .container {
   max-width: 900px;
   margin: 20px auto;
   padding: 20px;
 }
 
-/* Navbar styling */
-.Navbar {
+.navbar {
   background-color: #ffffff !important;
   border-bottom: 1px solid #eaeaea;
 }
 
-.Navbar-brand {
+.navbar-brand {
   font-size: 1.4rem;
   color: #007bff !important;
 }
 
-.Nav-link {
+.nav-link {
   font-size: 1rem;
   color: #333 !important;
   transition: color 0.2s ease-in-out;
 }
 
-.Nav-link:hover {
+.nav-link:hover {
   color: #007bff !important;
 }
 
-/* Headings */
 h1, h2, h3, h4 {
   color: #222;
   margin-bottom: 15px;
   font-weight: 600;
 }
 
-/* Form styling */
 form {
   background: #fff;
   padding: 20px;
@@ -54,14 +48,22 @@ form {
 
 form input, 
 form textarea {
+  width: 100%;
+  padding: 10px;
   margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
-/* Buttons */
 button, .btn {
   border-radius: 6px !important;
   padding: 8px 16px;
+  cursor: pointer;
   transition: all 0.2s ease-in-out;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
 }
 
 button:hover, .btn:hover {
@@ -69,8 +71,7 @@ button:hover, .btn:hover {
   transform: translateY(-1px);
 }
 
-/* Blog post cards */
-.post-card {
+.booking-card, .card {
   background: #fff;
   padding: 20px;
   border-radius: 10px;
@@ -78,17 +79,20 @@ button:hover, .btn:hover {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.post-card h3 {
+.booking-card h3, .card h5 {
   margin-bottom: 10px;
   color: #007bff;
 }
 
-.post-card p {
+.booking-card p, .card p {
   line-height: 1.6;
   color: #555;
 }
 
-/* Footer */
+.pagination .page-link {
+  cursor: pointer;
+}
+
 footer {
   text-align: center;
   padding: 15px;
@@ -97,4 +101,18 @@ footer {
   margin-top: 40px;
   font-size: 0.9rem;
   color: #666;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .navbar-brand {
+    font-size: 1.2rem;
+  }
+
+  h1, h2, h3, h4 {
+    font-size: 1.1rem;
+  }
 }

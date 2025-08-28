@@ -1,20 +1,33 @@
 <?php
-// config/cors.php
-
-// Define configuration options
-$allowedOrigins = ['http://localhost:3000']; // React dev server
+// CORS configuration
+$allowedOrigins = ['http://localhost:3000']; // Add other allowed origins as needed
 $allowedHeaders = ['Content-Type'];
 $allowedMethods = ['GET', 'POST', 'OPTIONS'];
 
-// Get the request origin
-$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+// Get the origin of the request
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-// Allow only defined origins
+// Allow the request origin if it's in the allowed list
 if (in_array($origin, $allowedOrigins)) {
     header('Access-Control-Allow-Origin: ' . $origin);
+    header('Access-Control-Allow-Credentials: true'); // allow cookies if needed
 }
 
-// Always allow credentials if needed
-header('Access-Control-Allow-Credentials: true');
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
+        header('Access-Control-Allow-Methods: ' . implode(', ', $allowedMethods));
+    }
 
-// Handle preflight request
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+        $requestHeaders = array_map('trim', explode(',', $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']));
+        if (count(array_intersect($requestHeaders, $allowedHeaders)) === count($requestHeaders)) {
+            header('Access-Control-Allow-Headers: ' . implode(', ', $allowedHeaders));
+        }
+    }
+    exit(0); // terminate OPTIONS requests early
+}
+
+// Optional: default content type
+header('Content-Type: application/json; charset=UTF-8');
+?>

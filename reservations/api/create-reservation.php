@@ -4,43 +4,68 @@ header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-require_once('../config/config.php');
-require_once('../config/database.php');
-
+// Handle preflight request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-$request_body = file_get_contents('php://input'); 
+// Include database connection
+require_once('config/database.php');
+
+// Read JSON input
+$request_body = file_get_contents('php://input');
 $data = json_decode($request_body, true);
 
-// Validate input fields
-if (empty($data['name']) || empty($data['email']) || empty($data['area']) || empty($data['timeslot'])) {
+// Validate input
+if (!isset($data['name'], $data['email'], $data['area'], $data['timeslot']) ||
+    empty(trim($data['name'])) ||
+    empty(trim($data['email'])) ||
+    empty(trim($data['area'])) ||
+    empty(trim($data['timeslot']))
+) {
     http_response_code(400);
-    echo json_encode(['message' => 'Error: Missing or empty required parameter']);
+    echo json_encode([
+        "status" => "error",
+        "message" => "All fields (name, email, area, timeslot) are required."
+    ]);
     exit();
 }
 
-// Sanitize input
-$name = filter_var($data['name'], FILTER_SANITIZE_STRING);
-$email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
-$area = filter_var($data['area'], FILTER_SANITIZE_STRING);
-$timeslot = filter_var($data['timeslot'], FILTER_SANITIZE_STRING);
+// Sanitize inputs
+$name = $conn->real_escape_string(trim($data['name']));
+$email = $conn->real_escape_string(trim($data['email']));
+$area = $conn->real_escape_string(trim($data['area']));
+$timeslot = $conn->real_escape_string(trim($data['timeslot']));
 
-// Insert reservation
-$stmt = $conn->prepare('INSERT INTO reservations (name, email, area, timeslot) VALUES (?, ?, ?, ?)');
-$stmt->bind_param('ssss', $name, $email, $area, $timeslot);
-
-if ($stmt->execute()) {
-    $id = $stmt->insert_id;
-    http_response_code(201);
-    echo json_encode(['message' => 'Reservation created successfully', 'id' => $id]);
-} else {
-    http_response_code(500);
-    echo json_encode(['message' => 'Error creating reservation: ' . $stmt->error]);
+// Optional: prevent duplicate reservations
+$checkSql = "SELECT id FROM reservations WHERE email='$email' AND area='$area' AND timeslot='$timeslot' LIMIT 1";
+$result = $conn->query($checkSql);
+if ($result && $result->num_rows > 0) {
+    echo json_encode([
+        "status" => "error",
+        "message" => "You already have a reservation for this area and timeslot."
+    ]);
+    exit();
 }
 
-$stmt->close();
+// Insert reservation into database
+$insertSql = "INSERT INTO reservations (name, email, area, timeslot, created_at)
+              VALUES ('$name', '$email', '$area', '$timeslot', NOW())";
+
+if ($conn->query($insertSql) === TRUE) {
+    echo json_encode([
+        "status" => "success",
+        "message" => "Reservation created successfully!"
+    ]);
+} else {
+    http_response_code(500);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Failed to create reservation: " . $conn->error
+    ]);
+}
+
+// Close the database connection
 $conn->close();
 ?>

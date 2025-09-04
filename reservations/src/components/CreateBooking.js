@@ -7,6 +7,7 @@ function CreateBooking() {
   const [email, setEmail] = useState('');
   const [area, setArea] = useState('');
   const [timeslot, setTimeslot] = useState('');
+  const [image, setImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -15,13 +16,12 @@ function CreateBooking() {
   const areas = ['Bruce Mill', 'Rockwood', 'Rattray', 'Rattlesnake Point'];
   const timeSlots = ['9:00am - 12:00pm', '12:00pm - 3:00pm', '3:00pm - 6:00pm'];
 
-  // Constant API URL, no state needed
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost/reservation-api";
   const apiUrl = `${API_BASE_URL}/create_reservation.php`;
 
   const validateForm = () => {
     if (!name.trim() || !email.trim() || !area.trim() || !timeslot.trim()) {
-      setMessage("Please fill in all fields.");
+      setMessage("Please fill in all required fields.");
       return false;
     }
     return true;
@@ -36,7 +36,19 @@ function CreateBooking() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(apiUrl, { name, email, area, timeslot });
+      // Use FormData for image upload
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('area', area);
+      formData.append('timeslot', timeslot);
+      if (image) formData.append('image', image); // only append if an image was selected
+
+      const response = await axios.post(apiUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
       if (response.data.status === 'success') {
         setMessage(response.data.message || "Reservation created successfully!");
@@ -44,7 +56,8 @@ function CreateBooking() {
         setEmail('');
         setArea('');
         setTimeslot('');
-        // navigate('/'); // optional redirect after success
+        setImage(null);
+        // navigate('/'); // optional redirect
       } else {
         setMessage(response.data.message || "Failed to create booking.");
       }
@@ -61,7 +74,8 @@ function CreateBooking() {
     <div className="container mt-4">
       <h2>Create a New Reservation</h2>
       {message && <div className="alert alert-info">{message}</div>}
-      <form onSubmit={handleSubmit}>
+
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
         <div className="mb-3">
           <label className="form-label">Full Name</label>
           <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -86,6 +100,16 @@ function CreateBooking() {
             <option value="">Select a Timeslot</option>
             {timeSlots.map((t, idx) => <option key={idx} value={t}>{t}</option>)}
           </select>
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Upload Image (Optional)</label>
+          <input 
+            type="file" 
+            className="form-control" 
+            accept="image/*" 
+            onChange={(e) => setImage(e.target.files[0] || null)} 
+          />
         </div>
 
         <button type="submit" className="btn btn-primary" disabled={isLoading}>

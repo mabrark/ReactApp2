@@ -34,8 +34,8 @@ if (!$countResult) {
 $countRow = mysqli_fetch_assoc($countResult);
 $totalBookings = (int)$countRow['totalBookings'];
 
-// Fetch paginated bookings
-$query = "SELECT id, name, email, area, timeslot, created_at 
+// Fetch paginated bookings (include image column)
+$query = "SELECT id, name, email, area, timeslot, created_at, image 
           FROM reservations 
           ORDER BY created_at DESC 
           LIMIT $offset, $maxBookingsPerPage";
@@ -52,6 +52,18 @@ if (!$result) {
 }
 
 $bookings = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+// Add placeholder for missing images
+$baseUrl = "http://localhost/reservation-api/uploads/";
+$placeholder = $baseUrl . "placeholder.jpg";
+
+foreach ($bookings as &$booking) {
+    if (!empty($booking['image'])) {
+        $booking['image'] = $baseUrl . $booking['image'];
+    } else {
+        $booking['image'] = $placeholder;
+    }
+}
 
 // Return response
 if (empty($bookings)) {

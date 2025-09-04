@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $id = intval($_GET['id']);
 
-    $query = "SELECT id, name, email, area, timeslot, created_at 
+    $query = "SELECT id, name, email, area, timeslot, created_at, image 
               FROM reservations 
               WHERE id = ?";
 
@@ -27,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($result->num_rows === 1) {
         $booking = $result->fetch_assoc();
 
+        // If no image uploaded, return placeholder
+        $imagePath = !empty($booking['image'])
+            ? "http://localhost/reservation-api/uploads/" . $booking['image']
+            : "http://localhost/reservation-api/uploads/placeholder.jpg";
+
         $response = [
             'status' => 'success',
             'data' => [
@@ -35,7 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'email'    => $booking['email'],
                 'area'     => $booking['area'],
                 'timeslot' => $booking['timeslot'],
-                'date'     => date("l jS \\of F Y", strtotime($booking['created_at']))
+                'date'     => date("l jS \\of F Y", strtotime($booking['created_at'])),
+                'image'    => $imagePath
             ]
         ];
 

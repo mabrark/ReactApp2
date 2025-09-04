@@ -9,17 +9,19 @@ import './App.css';
 function App() {
   return (
     <Router>
-      <Navbar /> {/* Navbar should be outside of Routes */}
       <div className="App">
+        {/* Navbar outside of Routes so it shows on all pages */}
+        <Navbar />
+
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/create-booking" element={<CreateBooking />} />
         </Routes>
-      </div>
 
-      <footer style={{ textAlign: 'center', marginTop: '2rem' }}>
-        <p>© {new Date().getFullYear()} Simple Reservation Application</p>
-      </footer>
+        <footer style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <p>© {new Date().getFullYear()} Simple Reservation Application</p>
+        </footer>
+      </div>
     </Router>
   );
 }

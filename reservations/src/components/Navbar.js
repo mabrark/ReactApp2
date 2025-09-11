@@ -1,45 +1,64 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-const Navbar = () => {
+function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loggedIn);
+    setUserRole(role);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("role");
+    setIsLoggedIn(false);
+    setUserRole(null);
+    navigate("/login");
+  };
+
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container">
-        {/* Brand in the center */}
-        <Link className="navbar-brand mx-auto fw-bold text-center" to="/">
-          Reservation System
-        </Link>
+        <Link className="navbar-brand" to="/">Reservations App</Link>
 
-        {/* Mobile toggle */}
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
+        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        <div className="collapse navbar-collapse justify-content" id="navbarNav">
-          <ul className="navbar-nav">
-            <li className="nav-item mx-2">
-              <Link className="nav-link text" to="/">
-                Home
-              </Link>
-            </li>
-            <li className="nav-item mx-2">
-              <Link className="nav-link text" to="/create-booking">
-                Create Reservation
-              </Link>
-            </li>
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav ms-auto">
+            {isLoggedIn ? (
+              <>
+                <li className="nav-item">
+                  <span className="nav-link">Role: {userRole}</span>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/bookings">Bookings</Link>
+                </li>
+                {userRole === "admin" && (
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/create-booking">Create Booking</Link>
+                  </li>
+                )}
+                <li className="nav-item">
+                  <button className="btn btn-outline-secondary ms-2" onClick={handleLogout}>Logout</button>
+                </li>
+              </>
+            ) : (
+              <li className="nav-item">
+                <Link className="nav-link" to="/login">Login</Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>
     </nav>
   );
-};
+}
 
 export default Navbar;

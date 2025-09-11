@@ -12,6 +12,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Include database connection
 require_once('config/database.php');
+session_start();
+
+// 🔐 Enforce login
+if (!isset($_SESSION['isLoggedIn']) || $_SESSION['isLoggedIn'] !== true) {
+    http_response_code(401);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Unauthorized - Please log in."
+    ]);
+    exit();
+}
+
+// 🛡 Only admin can create reservations
+if ($_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Forbidden - Admins only."
+    ]);
+    exit();
+}
 
 // If request is multipart (file + fields)
 if (!empty($_FILES) || isset($_POST['name'])) {

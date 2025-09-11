@@ -7,18 +7,15 @@ function Register() {
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    role: "user",
+    adminCode: "",
   });
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -26,43 +23,39 @@ function Register() {
     setError("");
     setSuccess("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/register.php`,
         formData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+        { withCredentials: true }
       );
 
       if (response.data.status === "success") {
-        setSuccess("Registration successful! Redirecting to login...");
+        setSuccess("Registered successfully! Redirecting...");
         setTimeout(() => navigate("/login"), 1500);
       } else {
-        setError(response.data.message || "Registration failed");
+        setError(response.data.message);
       }
     } catch (err) {
-      setError("Error during registration. Please try again.");
+      console.error(err);
+      setError("Registration failed. Try again.");
     }
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5" style={{ maxWidth: "500px" }}>
       <h2 className="mb-4">Register</h2>
+
       {error && <div className="alert alert-danger">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label className="form-label">Name</label>
+          <label>Name</label>
           <input
             type="text"
-            name="name"
             className="form-control"
+            name="name"
             value={formData.name}
             onChange={handleChange}
             required
@@ -70,11 +63,11 @@ function Register() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Email address</label>
+          <label>Email</label>
           <input
             type="email"
-            name="email"
             className="form-control"
+            name="email"
             value={formData.email}
             onChange={handleChange}
             required
@@ -82,30 +75,47 @@ function Register() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Password</label>
+          <label>Password</label>
           <input
             type="password"
-            name="password"
             className="form-control"
+            name="password"
             value={formData.password}
             onChange={handleChange}
             required
           />
         </div>
 
+        {/* Role Selection */}
         <div className="mb-3">
-          <label className="form-label">Confirm Password</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            className="form-control"
-            value={formData.confirmPassword}
+          <label>Role</label>
+          <select
+            className="form-select"
+            name="role"
+            value={formData.role}
             onChange={handleChange}
-            required
-          />
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
 
-        <button type="submit" className="btn btn-primary">
+        {/* Admin Code only if Admin is selected */}
+        {formData.role === "admin" && (
+          <div className="mb-3">
+            <label>Admin Secret Code</label>
+            <input
+              type="password"
+              className="form-control"
+              name="adminCode"
+              value={formData.adminCode}
+              onChange={handleChange}
+              required={formData.role === "admin"}
+            />
+          </div>
+        )}
+
+        <button type="submit" className="btn btn-primary w-100">
           Register
         </button>
       </form>

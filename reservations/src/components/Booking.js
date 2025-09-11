@@ -5,49 +5,57 @@ import axios from "axios";
 const Booking = () => {
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
-
-  const fetchBooking = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/booking.php?id=${id}`
-      );
-
-      if (response.data.status === "success") {
-        setBooking(response.data.data);
-      } else {
-        console.error("Error:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error fetching booking:", error);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
+    setUserRole(localStorage.getItem("role"));
+  }, []);
+
+  useEffect(() => {
+    const fetchBooking = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/booking.php?id=${id}`,
+          { withCredentials: true }
+        );
+
+        if (response.data.status === "success") {
+          setBooking(response.data.data);
+        } else {
+          setError(response.data.message || "Failed to fetch booking.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Error fetching booking.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchBooking();
   }, [id]);
 
-  if (!booking) {
-    return <div>Loading booking details...</div>;
-  }
+  if (loading) return <div>Loading booking details...</div>;
+  if (error) return <div className="text-danger">{error}</div>;
+  if (!booking) return <div>No booking found.</div>;
 
   return (
     <div className="container my-4">
       <h2 className="mb-4">Booking Details</h2>
 
-      {/* Conservation Area Image */}
       <img
         src={booking.image || "http://localhost/reservation-api/uploads/placeholder.jpg"}
         alt={booking.area}
         style={{ width: "100%", maxWidth: "500px", borderRadius: "10px", marginBottom: "20px" }}
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = "http://localhost/reservation-api/uploads/placeholder.jpg";
-        }}
+        onError={(e) => { e.target.onerror = null; e.target.src = "http://localhost/reservation-api/uploads/placeholder.jpg"; }}
       />
 
-      {/* Booking Info */}
       <p><strong>Name:</strong> {booking.name}</p>
-      <p><strong>Email:</strong> {booking.email}</p>
+      <p><strong>Email:</strong> {booking.email === "Hidden" ? <em>Hidden (Admin only)</em> : booking.email}</p>
       <p><strong>Conservation Area:</strong> {booking.area}</p>
       <p><strong>Timeslot:</strong> {booking.timeslot}</p>
       <p><strong>Date:</strong> {booking.date}</p>

@@ -1,49 +1,47 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
+require_once('../config/database.php');
 
-require_once('config/database.php');
+$SECRET_ADMIN_CODE = "SuperSecret123"; // 🔑 only this code allows admin registration
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-$request_body = file_get_contents('php://input');
-$data = json_decode($request_body, true);
-
-if (!isset($data['name'], $data['email'], $data['password'])) {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "All fields are required."]);
-    exit();
-}
-
+$data = json_decode(file_get_contents("php://input"), true);
 $name = trim($data['name']);
 $email = trim($data['email']);
-$password = password_hash($data['password'], PASSWORD_DEFAULT);
+$password = $data['password'];
+$role = isset($data['role']) ? $data['role'] : 'user';
+$adminCode = isset($data['adminCode']) ? $data['adminCode'] : '';
 
-// Check if user already exists
-$check = $conn->prepare("SELECT id FROM users WHERE email=? LIMIT 1");
-$check->bind_param("s", $email);
-$check->execute();
-$result = $check->get_result();
-if ($result->num_rows > 0) {
-    echo json_encode(["status" => "error", "message" => "Email already registered."]);
+if (!$name || !$email || !$password) {
+    http_response_code(400);
+    echo json_encode(["status"=>"error","message"=>"All fields required"]);
     exit();
 }
 
-// Insert user
-$stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-$stmt->bind_param("sss", $name, $email, $password);
-
-if ($stmt->execute()) {
-    echo json_encode(["status" => "success", "message" => "Registration successful!"]);
-} else {
-    echo json_encode(["status" => "error", "message" => "Failed: " . $conn->error]);
+// Prevent duplicate email
+$check = $conn->prepare("SELECT id FROM users WHERE email=?");
+$check->bind_param("s",$email);
+$check->execute();
+$check->store_result();
+if($check->num_rows > 0){
+    echo json_encode(["status"=>"error","message"=>"Email already registered"]);
+    exit();
 }
 
-$stmt->close();
-$conn->close();
-?>
+// Enforce admin secret
+if ($role === "admin") {
+    if ($adminCode !== $SECRET_ADMIN_CODE) {
+        echo json_encode(["status"=>"error","message"=>"Invalid admin code"]);
+        exit();
+    }
+}
+
+$hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+$stmt = $conn->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
+$stmt->bind_param("ssss", $name, $email, $hashedPassword, $role);
+
+if($stmt->execute()){
+    echo json_encode(["status"=>"success","message"=>"Registered successfully"]);
+}else{
+    http_response_code(500);
+    echo json_encode(["status"=>"error","message"=>"Database error: ".$stmt->error]);
+}
